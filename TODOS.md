@@ -1,6 +1,4 @@
-- remove jQuery
-- replace Mongo memory server with Atlas
-  - ctrl C doesn't work w/ mem server :(
+- replace Mongo memory server with Atlas to be persistent
 - better styling on Frontend
 
   - CSS Reset
@@ -8,5 +6,5 @@
 
 - convert all Mongoose calls to promises
 
-- update README to say to start frontend + backend separately
+- start frontend + backend separately?
 - update README in general

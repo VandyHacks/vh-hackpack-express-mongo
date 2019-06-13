@@ -1,60 +1,50 @@
 "use strict";
 
-const SERVER = "localhost:3000";
+// get element from DOM
+var $ = str => document.querySelector(str);
+
+const displayAllPeople = () => {
+  fetch("/people")
+    .then(data => data.json())
+    .then(data => {
+      console.log(data);
+      $("#get-all-container").innerHTML = JSON.stringify(data, null, 2);
+    })
+    .catch(err => console.error(err));
+};
 
 // initial load
 window.onload = () => {
-  $.get(SERVER + "/people", data => {
-    $("#get-all-container").html(JSON.stringify(data, null, 2));
-  });
+  displayAllPeople();
 };
 
 const addPerson = () => {
   console.log("adding person...");
-  $.ajax({
-    type: "POST",
-    url: SERVER + "/people",
-    data: { name: $("#add-person").val() },
-    success: () => {
-      console.log("success.");
-      $.get(SERVER + "/people", data => {
-        $("#get-all-container").html(JSON.stringify(data, null, 2));
-      });
-    }
-  });
+  fetch("/people", {
+    method: "POST",
+    body: JSON.stringify({ name: $("#add-person").value })
+  }).then(displayAllPeople);
 };
 
 const getFriends = () => {
-  const personID = $("#get-friends").val();
-  $.get(SERVER + "/people/" + personID, data => {
-    $("#get-friends-container").html(JSON.stringify(data, null, 2));
+  const personID = $("#get-friends").value;
+  fetch("/people/" + personID).then(data => {
+    $("#get-friends-container").innerHTML = JSON.stringify(data, null, 2);
   });
 };
 
-const addFriends = () => {
-  const personID = $("#add-friend-self").val();
-  const friendID = $("#add-friend-friend").val();
-  $.ajax({
-    type: "PUT",
-    url: SERVER + "/people/" + personID,
-    data: { id: friendID },
-    success: () => {
-      $.get(SERVER + "/people", data => {
-        $("#get-all-container").html(JSON.stringify(data, null, 2));
-      });
-    }
-  });
+const addFriend = () => {
+  const personID = $("#add-friend-self").value;
+  const friendID = $("#add-friend-friend").value;
+  fetch("/people/" + personID, {
+    method: "PUT",
+    body: JSON.stringify({ id: friendID })
+  }).then(displayAllPeople);
 };
 
 const removePerson = () => {
-  const personID = $("#remove-person").val();
-  $.ajax({
-    type: "DELETE",
-    url: SERVER + "/people/" + personID,
-    success: () => {
-      $.get(SERVER + "/people", data => {
-        $("#get-all-container").html(JSON.stringify(data, null, 2));
-      });
-    }
-  });
+  const personID = $("#remove-person").value;
+  fetch("/people/" + personID, {
+    method: "DELETE"
+  }).then(displayAllPeople);
 };

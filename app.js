@@ -23,9 +23,9 @@ mongoServer.getConnectionString().then(uri => {
 });
 
 // Set up static files
-// app.use(express.static("public"));
-// app.use("/css", express.static(path.join(__dirname, "public/styles")));
-// app.use("/scripts", express.static(path.join(__dirname, "public/scripts")));
+app.use(express.static("public"));
+app.use("/css", express.static(path.join(__dirname, "public/styles")));
+app.use("/scripts", express.static(path.join(__dirname, "public/scripts")));
 
 // Use body-parser to parse HTTP request parameters
 app.use(bodyParser.json());
@@ -45,13 +45,13 @@ app.listen(PORT, () => {
 });
 
 // Serves the index.html file (our basic frontend)
-// app.get("/", function(req, res) {
-//   res.sendFile("index.html", { root: __dirname });
-// });
+app.get("/", function(req, res) {
+  res.sendFile("index.html", { root: __dirname });
+});
 
 // GET route that displays all people (finds all Person objects)
 app.get("/people", (req, res, next) => {
-  console.log("getting people...");
+  console.log("get people...");
   Person.find({}, (err, result) => {
     if (err) {
       console.log(err);
@@ -75,21 +75,28 @@ app.get("/people/:id", (req, res, next) => {
 
 // POST route that adds a new Person object
 app.post("/people", (req, res, next) => {
+  if (!req.body.name) {
+    console.error("Name must be provided as a POST parameter.");
+  }
   // First gets a random dog image URL
   fetch("https://dog.ceo/api/breeds/image/random")
     .then(data => data.json())
     .then(data => {
       console.log(data);
-      if (response.statusCode == 200) {
-        var person = new Person();
-        person.name = req.body.name; // Stores the 'name' string
-        person.dog = JSON.parse(body).message; // Stores the 'dog' image URL
-        person.friends = []; // Initializes an empty array of friends
-        person.save(function(err, person) {
-          // Saves the Person object to the database
-          res.send(person); // Returns the new object as JSON
-        });
+      if (data.status !== "success") {
+        return;
       }
+      const person = new Person();
+      person.name = req.body.name; // Stores the 'name' string
+      person.dog = data.message; // Stores the 'dog' image URL
+      person.friends = []; // Initializes an empty array of friends
+      person.save(function(err, person) {
+        if (err) {
+          console.error(err);
+        }
+        // Saves the Person object to the database
+        res.send(person); // Returns the new object as JSON
+      });
     })
     .catch(err => console.log(err));
 });
@@ -98,30 +105,30 @@ app.post("/people", (req, res, next) => {
 app.put("/people/:id", (req, res, next) => {
   Person.findById(req.params.id, function(err, person) {
     // Finds a Person by id (param in URL)
-    person.friends.push(req.body.id); // Adds the friend with ID in POST parameters
-    person.save(function(err) {
+    person.friends.push(req.params.id); // Adds the friend with ID in POST parameters
+    person.save(err => {
       // Saves the Person object
       if (err) {
-        console.log(err);
-      } else {
-        Person.findById(req.body.id, function(err, person) {
-          // Same, but for the 2nd person
-          person.friends.push(req.params.id); // Saves the Person object
-          person.save(function(err) {
-            if (err) {
-              console.log(err);
-            } else {
-              res.send(
-                "Friendship between " +
-                  req.body.id +
-                  " and " +
-                  req.params.id +
-                  "created!"
-              );
-            }
-          });
-        });
+        throw err;
+        return;
       }
+      Person.findById(req.body.id, function(err, person) {
+        // Same, but for the 2nd person
+        person.friends.push(req.params.id); // Saves the Person object
+        person.save(err => {
+          if (err) {
+            console.log(err);
+            return;
+          }
+          res.send(
+            "Friendship between " +
+              req.body.id +
+              " and " +
+              req.params.id +
+              "created!"
+          );
+        });
+      });
     });
   });
 });
