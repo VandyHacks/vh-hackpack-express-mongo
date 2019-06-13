@@ -19,11 +19,17 @@ window.onload = () => {
 };
 
 const addPerson = () => {
+  const personName = $("#add-person").value;
   console.log("adding person...");
   fetch("/people", {
     method: "POST",
-    body: JSON.stringify({ name: $("#add-person").value })
-  }).then(displayAllPeople);
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ name: personName })
+  })
+    .then(res => console.log(res))
+    .then(displayAllPeople);
 };
 
 const getFriends = () => {
@@ -38,13 +44,21 @@ const addFriend = () => {
   const friendID = $("#add-friend-friend").value;
   fetch("/people/" + personID, {
     method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({ id: friendID })
-  }).then(displayAllPeople);
+  })
+    .then(res => console.log(res))
+    .then(displayAllPeople);
 };
 
 const removePerson = () => {
   const personID = $("#remove-person").value;
+  console.log(`removing person ID=${personID}`);
   fetch("/people/" + personID, {
     method: "DELETE"
-  }).then(displayAllPeople);
+  })
+    .then(res => console.log(res))
+    .then(displayAllPeople);
 };

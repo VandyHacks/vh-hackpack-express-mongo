@@ -18,7 +18,9 @@ const mongoServer = new MongodbMemoryServer.MongoMemoryServer({
 
 mongoServer.getConnectionString().then(uri => {
   // Connect to MongoDB - should be running locally
-  mongoose.connect(uri);
+  mongoose.connect(uri).then(() => {
+    console.log(`Database started on ${uri}`);
+  });
   mongoose.Promise = global.Promise;
 });
 
@@ -29,7 +31,7 @@ app.use("/scripts", express.static(path.join(__dirname, "public/scripts")));
 
 // Use body-parser to parse HTTP request parameters
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Error handling middleware
 app.use(function(err, req, res, next) {
@@ -52,25 +54,20 @@ app.get("/", function(req, res) {
 // GET route that displays all people (finds all Person objects)
 app.get("/people", (req, res, next) => {
   console.log("get people...");
-  Person.find({}, (err, result) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.send(result); // Sends the result as JSON
-    }
-  });
+  Person.find({})
+    .then(
+      result => res.send(result) // Sends the result as JSON
+    )
+    .catch(err => console.log(err));
 });
 
 // GET route that displays one person's friends
 app.get("/people/:id", (req, res, next) => {
-  Person.findById(req.params.id, (err, result) => {
-    // Finds person with id (param)
-    if (!err) {
-      res.send(result.friends); // Returns the person's friends array as JSON
-    } else {
-      throw err;
-    }
-  });
+  Person.findById(req.params.id)
+    .then(
+      result => res.send(result.friends) // Returns the person's friends array as JSON
+    )
+    .catch(err => console.log(err));
 });
 
 // POST route that adds a new Person object
@@ -90,7 +87,7 @@ app.post("/people", (req, res, next) => {
       person.name = req.body.name; // Stores the 'name' string
       person.dog = data.message; // Stores the 'dog' image URL
       person.friends = []; // Initializes an empty array of friends
-      person.save(function(err, person) {
+      person.save((err, person) => {
         if (err) {
           console.error(err);
         }
@@ -102,45 +99,50 @@ app.post("/people", (req, res, next) => {
 });
 
 // PUT route that adds a friend to a person
-app.put("/people/:id", (req, res, next) => {
-  Person.findById(req.params.id, function(err, person) {
-    // Finds a Person by id (param in URL)
-    person.friends.push(req.params.id); // Adds the friend with ID in POST parameters
-    person.save(err => {
-      // Saves the Person object
-      if (err) {
-        throw err;
+const addFriend = (userID, friendID) => {
+  return Person.findById(userID)
+    .then(person => {
+      if (!person) {
+        console.log("Person not found");
         return;
       }
-      Person.findById(req.body.id, function(err, person) {
-        // Same, but for the 2nd person
-        person.friends.push(req.params.id); // Saves the Person object
-        person.save(err => {
-          if (err) {
-            console.log(err);
-            return;
-          }
-          res.send(
-            "Friendship between " +
-              req.body.id +
-              " and " +
-              req.params.id +
-              "created!"
-          );
-        });
+      // Finds a Person by id (param in URL)
+      person.friends.push(friendID); // Adds the friend with ID in POST parameters
+      person.save(err => {
+        // Saves the Person object
+        if (err) {
+          console.log(err);
+          return;
+        }
       });
-    });
-  });
+    })
+    .catch(err => console.log(err));
+};
+app.put("/people/:id", (req, res, next) => {
+  // add A to B's friends
+  addFriend(req.param.id, req.body.id)
+    .then(() => {
+      // add B to A's friends
+      addFriend(req.body.id, req.param.id);
+    })
+    .then(() => {
+      res.send(
+        "Friendship between " +
+          req.body.id +
+          " and " +
+          req.params.id +
+          "created!"
+      );
+    })
+    .catch(err => console.log(err));
 });
 
 // DELETE route that removes a Person object from the database
 app.delete("/people/:id", (req, res, next) => {
-  Person.findByIdAndRemove(req.params.id, (err, result) => {
-    // Finds by ID and remove
-    if (err) {
-      console.log(err);
-    } else {
+  console.log(req.params.promise);
+  Person.findByIdAndRemove(req.params.id)
+    .then(result => {
       res.send("Deleted person with id " + req.params.id);
-    }
-  });
+    })
+    .catch(err => console.log(err));
 });
