@@ -1,6 +1,29 @@
 /* main styles */
 
-/* TODO: add CSS Reset*/
+
 html {
     font-family: 'Open Sans', 'Roboto';
+}
+
+/* Basic CSS from https://jrl.ninja/etc/1/ */
+/* html {
+    max-width: 38rem;
+    padding: 2rem;
+    margin: auto;
+} */
+
+
+/*** using Flexbox :) ***/
+#container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+
+#left {
+    width: 30%;
+}
+
+#right {
+    width: 70%;
 }
